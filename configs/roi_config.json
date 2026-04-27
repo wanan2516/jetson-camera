@@ -1,0 +1,25 @@
+{
+  "version": "1.0",
+  "rois": [
+    {
+      "roi_id": "hazard_1",
+      "name": "全图危险区域",
+      "enabled": true,
+      "roi_type": "forbidden_zone",
+      "judge_method": "foot_point",
+      "coordinate_mode": "normalized",
+      "polygon": [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]],
+      "overlap_thres": 0.2
+    }
+  ],
+  "judge_methods": {
+    "foot_point": "检测框底部中心点是否在 ROI 内（推荐用于地面区域）",
+    "center_point": "检测框中心点是否在 ROI 内（简单快速）",
+    "overlap": "检测框与 ROI 重叠率是否超过阈值（适合俯视或不规则区域）"
+  },
+  "roi_types": {
+    "clear_zone": "清扫区：启动前必须无人",
+    "warning_zone": "预警区：有人时发出警告",
+    "forbidden_zone": "禁止区：有人时触发报警"
+  }
+}

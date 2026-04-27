@@ -1,0 +1,26 @@
+# 模型配置文件
+version: "1.0"
+camera_id: "cam_demo_001"
+
+# 模型路径（相对于项目根目录）
+model_path: "weights/yolo11n.pt"
+
+# 模型输入尺寸
+imgsz: 640
+
+# 设备选择（null 表示自动选择，可选 "cpu", "cuda", "mps"）
+device: null
+
+# 只检测 person 类别（COCO class_id=0）
+person_class_ids: [0]
+
+# 检测阈值
+thresholds:
+  conf_thres: 0.35  # 置信度阈值
+  iou_thres: 0.45   # NMS IoU 阈值
+
+# ONNX 导出配置
+onnx_export:
+  opset: 12
+  simplify: true
+  dynamic: false

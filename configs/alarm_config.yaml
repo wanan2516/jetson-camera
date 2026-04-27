@@ -1,0 +1,42 @@
+# 报警逻辑配置文件
+version: "1.0"
+
+# 防抖参数（基于帧数）
+debounce:
+  enter_frames: 3  # 连续 N 帧检测到目标才触发报警
+  exit_frames: 5   # 连续 M 帧未检测到目标才解除报警
+
+# 报警逻辑说明
+alarm_logic:
+  clear_zone:
+    description: "区域清扫逻辑"
+    condition: "清扫区无人 -> allow_start=True；有人 -> forbid_start=True"
+    use_case: "设备启动前确保清扫区域无人"
+
+  warning_zone:
+    description: "危险靠近逻辑"
+    condition: "预警区有人 -> warning=True"
+    use_case: "人员接近危险区域时发出警告"
+
+  forbidden_zone:
+    description: "入侵检测逻辑"
+    condition: "禁止区有人 -> alarm=True"
+    use_case: "人员进入禁止区域时触发报警"
+
+# 系统状态说明
+system_states:
+  - "SAFE: 安全状态，无报警"
+  - "PRESTART_CHECKING: 启动前检查中"
+  - "PRESTART_BLOCKED: 启动前检查失败，清扫区有人"
+  - "WARNING: 警告状态，预警区有人"
+  - "ALARM: 报警状态，禁止区有人"
+
+# 推荐配置（25 FPS）
+recommended_settings:
+  fps_25:
+    enter_frames: 3  # 约 120ms 延迟
+    exit_frames: 5   # 约 200ms 延迟
+  fps_30:
+    enter_frames: 4  # 约 133ms 延迟
+    exit_frames: 6   # 约 200ms 延迟
+  note: "如果环境有振动或光照闪烁，可增加 enter_frames；如果需要报警持续更久，可增加 exit_frames"

@@ -1,0 +1,18 @@
+# YOLOv11n 工业安全视觉系统依赖
+
+# 深度学习框架
+ultralytics>=8.3.0
+
+# 计算机视觉
+opencv-python>=4.8.0
+
+# 数值计算
+numpy>=1.24.0
+
+# ONNX 相关
+onnx>=1.12.0
+onnxruntime>=1.18.0
+onnxsim>=0.4.36
+
+# 配置文件解析
+pyyaml>=6.0
