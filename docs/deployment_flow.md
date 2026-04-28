@@ -48,7 +48,7 @@ python scripts/run_demo.py \
 # 方法 1: 使用独立脚本（推荐）
 python scripts/export_onnx.py \
   --model weights/yolo11n.pt \
-  --output weights/yolo11n.onnx \
+  --output weights/yolo11n_person.onnx \
   --imgsz 640 \
   --opset 12
 
@@ -56,7 +56,7 @@ python scripts/export_onnx.py \
 python python_prototype/main.py \
   --config configs/config.json \
   --mode export_onnx \
-  --output weights/yolo11n.onnx
+  --output weights/yolo11n_person.onnx
 ```
 
 ### 1.3 ONNX 验证
@@ -64,7 +64,7 @@ python python_prototype/main.py \
 ```bash
 # 方法 1: 使用独立脚本（推荐）
 python scripts/validate_onnx.py \
-  --model weights/yolo11n.onnx \
+  --model weights/yolo11n_person.onnx \
   --image assets/test.jpg \
   --imgsz 640
 
@@ -73,7 +73,7 @@ python python_prototype/main.py \
   --config configs/config.json \
   --mode validate_onnx \
   --input assets/test.jpg \
-  --onnx weights/yolo11n.onnx
+  --onnx weights/yolo11n_person.onnx
 ```
 
 ### 1.4 ONNX Runtime 推理验证
@@ -85,7 +85,7 @@ python python_prototype/main.py \
   --mode decode_onnx \
   --input assets/test.jpg \
   --output assets/onnx_result.jpg \
-  --onnx weights/yolo11n.onnx
+  --onnx weights/yolo11n_person.onnx
 ```
 
 ## 阶段 2: Jetson 部署准备
@@ -107,8 +107,8 @@ python python_prototype/main.py \
 ```bash
 # 在 Jetson 上执行
 trtexec \
-  --onnx=weights/yolo11n.onnx \
-  --saveEngine=weights/yolo11n_fp16.engine \
+  --onnx=weights/yolo11n_person.onnx \
+  --saveEngine=weights/yolo11n_person.engine \
   --fp16 \
   --workspace=4096
 
@@ -121,24 +121,35 @@ trtexec \
 ### 2.3 C++ 推理程序编译
 
 ```bash
-cd cpp_tensorrt
-mkdir -p build
-cd build
+CUDACXX=/usr/local/cuda-12.6/bin/nvcc cmake -S cpp_tensorrt -B cpp_tensorrt/build \
+  -D CMAKE_CUDA_COMPILER=/usr/local/cuda-12.6/bin/nvcc \
+  -D CUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda-12.6 \
+  -D OpenCV_DIR=/opt/opencv-4.8.0-cuda/lib/cmake/opencv4
 
-cmake .. \
-  -DCMAKE_BUILD_TYPE=Release \
-  -DCUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda
-
-make -j$(nproc)
+cmake --build cpp_tensorrt/build -j$(nproc)
 ```
 
 ### 2.4 运行 C++ 推理
 
 ```bash
-./camera_tensorrt \
-  ../weights/yolo11n_fp16.engine \
-  ../assets/test.jpg \
-  --output ../assets/cpp_result.jpg
+./cpp_tensorrt/build/camera_tensorrt \
+  weights/yolo11n_person.engine \
+  assets/test.jpg \
+  outputs/cpp_roi_alarm.jpg \
+  configs/config.json \
+  outputs/cpp_roi_alarm.json
+```
+
+输入可以是图片、视频文件、摄像头索引、RTSP URL 或 GStreamer pipeline。启动前清扫区检查追加 `--prestart`：
+
+```bash
+./cpp_tensorrt/build/camera_tensorrt \
+  weights/yolo11n_person.engine \
+  0 \
+  outputs/camera.jpg \
+  configs/config.json \
+  outputs/camera.json \
+  --prestart
 ```
 
 ## 阶段 3: 性能优化
@@ -154,10 +165,12 @@ python python_prototype/main.py \
   --no-display
 
 # C++ 版本
-./camera_tensorrt \
-  ../weights/yolo11n_fp16.engine \
+./cpp_tensorrt/build/camera_tensorrt \
+  weights/yolo11n_person.engine \
   test_video.mp4 \
-  --benchmark
+  outputs/video_last_frame.jpg \
+  configs/config.json \
+  outputs/video_last_frame.json
 ```
 
 ### 3.2 延迟测试
@@ -170,7 +183,7 @@ python python_prototype/main.py \
   --config configs/config.json \
   --mode camera \
   --input 0 \
-  --benchmark
+  --no-display
 ```
 
 ### 3.3 优化建议
@@ -194,12 +207,14 @@ python python_prototype/main.py \
 
 ### 4.1 配置文件迁移
 
-Python 配置文件格式：
-- `configs/model_config.yaml`: 模型配置
-- `configs/roi_config.json`: ROI 配置
-- `configs/alarm_config.yaml`: 报警配置
+Python 和 C++ 当前统一以 `configs/config.json` 作为运行主配置，里面包含模型路径、阈值、ROI 和报警防抖参数。
 
-C++ 需要实现相同的配置加载逻辑（推荐使用 JSON 格式）。
+以下文件仅作为参考模板或说明材料：
+- `configs/model_config.yaml`: 模型配置示例
+- `configs/roi_config.json`: ROI 配置示例，也可作为 C++ 备用配置
+- `configs/alarm_config.yaml`: 报警配置示例
+
+C++ 已读取 `configs/config.json`；正式部署前建议把当前轻量 JSON 解析替换为严格 JSON 解析器。
 
 ### 4.2 接口对齐
 
@@ -232,7 +247,7 @@ python python_prototype/main.py \
 
 # C++ 版本
 ./camera_tensorrt \
-  ../weights/yolo11n_fp16.engine \
+  ../weights/yolo11n_person.engine \
   ../assets/test.jpg \
   --output ../assets/cpp_result.jpg
 
@@ -260,7 +275,7 @@ pip install --upgrade ultralytics onnx onnxruntime onnxsim
 **解决**:
 ```bash
 # 使用 onnxsim 简化模型
-python -m onnxsim weights/yolo11n.onnx weights/yolo11n_simplified.onnx
+python -m onnxsim weights/yolo11n_person.onnx weights/yolo11n_simplified.onnx
 
 # 或降低 opset 版本
 python scripts/export_onnx.py --model weights/yolo11n.pt --opset 11
@@ -298,12 +313,3 @@ python scripts/export_onnx.py --model weights/yolo11n.pt --opset 11
 | YOLOv11n | 640x640 | INT8 | ~50 | ~20ms |
 
 注：以上数据仅供参考，实际性能取决于具体场景和优化程度。
-
-## 下一步
-
-1. 完成 Python 原型验证
-2. 准备 Jetson 开发环境
-3. 生成 TensorRT engine
-4. 完善 C++ 推理程序
-5. 性能测试与优化
-6. 现场部署与调试

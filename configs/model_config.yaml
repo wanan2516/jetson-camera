@@ -2,8 +2,8 @@
 version: "1.0"
 camera_id: "cam_demo_001"
 
-# 模型路径（相对于项目根目录）
-model_path: "weights/yolo11n.pt"
+# 模型路径（相对于当前配置文件所在目录）
+model_path: "../weights/yolo11n.pt"
 
 # 模型输入尺寸
 imgsz: 640

@@ -22,8 +22,11 @@ env/
 # Logs and runtime output
 *.log
 logs/
+outputs/
 tmp/
 temp/
+assets/result*.jpg
+assets/onnx_result*.jpg
 
 # Native/build artifacts
 build/
@@ -35,3 +38,6 @@ cmake-build-*/
 *.engine
 *.plan
 *.trt
+
+# Generated model export variants
+weights/*_simplified.onnx

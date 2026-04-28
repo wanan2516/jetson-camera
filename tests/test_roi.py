@@ -7,7 +7,6 @@ from pathlib import Path
 # 添加 python_prototype 到路径
 sys.path.insert(0, str(Path(__file__).parent.parent / "python_prototype"))
 
-import numpy as np
 from data_models import Detection, ROIRule, ROIType
 from roi_manager import ROIManager
 

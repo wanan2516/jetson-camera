@@ -7,38 +7,38 @@
 ## 模型信息
 
 - **模型**: YOLOv11n
-- **任务**: 目标检测（Object Detection）
-- **类别**: person (COCO class_id=0)
+- **任务**: 目标检测
+- **类别**: `person`（COCO 类别编号为 0）
 - **框架**: Ultralytics YOLO
 
 ## 输入规范
 
 ### 输入尺寸
 
-- **固定尺寸**: 640x640 (默认)
-- **可选尺寸**: 480x480, 320x320 (需重新导出 ONNX)
-- **格式**: NCHW (Batch, Channel, Height, Width)
+- **固定尺寸**: 640x640（默认）
+- **可选尺寸**: 480x480, 320x320（需重新导出 ONNX）
+- **格式**: NCHW（批次、通道、高度、宽度）
 
 ### 预处理流程
 
-#### 1. Letterbox Resize
+#### 1. 等比例缩放与填充
 
 保持宽高比的缩放，不足部分用灰色填充：
 
 ```python
 def letterbox(image, target_size=640):
     """
-    Letterbox resize with aspect ratio preservation
+    保持宽高比的缩放与填充。
     
-    Args:
-        image: BGR image (H, W, C)
-        target_size: target size (default 640)
+    参数：
+        image: BGR 图像，形状为 HWC
+        target_size: 目标尺寸，默认 640
     
-    Returns:
-        resized: letterboxed image (target_size, target_size, 3)
-        scale: resize scale factor
-        pad_x: left padding
-        pad_y: top padding
+    返回：
+        resized: 填充后的图像，形状为 target_size x target_size x 3
+        scale: 缩放比例
+        pad_x: 左侧填充
+        pad_y: 顶部填充
     """
     h, w = image.shape[:2]
     scale = min(target_size / h, target_size / w)
@@ -46,19 +46,19 @@ def letterbox(image, target_size=640):
     new_w = int(round(w * scale))
     new_h = int(round(h * scale))
     
-    # Resize
+    # 缩放图像
     resized = cv2.resize(image, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
     
-    # Create canvas with gray padding (114, 114, 114)
+    # 创建灰色填充画布，填充值为 114
     canvas = np.full((target_size, target_size, 3), 114, dtype=np.uint8)
     
-    # Calculate padding
+    # 计算填充量
     pad_x = (target_size - new_w) / 2
     pad_y = (target_size - new_h) / 2
     left = int(round(pad_x - 0.1))
     top = int(round(pad_y - 0.1))
     
-    # Paste resized image
+    # 放置缩放后的图像
     canvas[top:top+new_h, left:left+new_w] = resized
     
     return canvas, scale, float(left), float(top)
@@ -67,30 +67,30 @@ def letterbox(image, target_size=640):
 #### 2. 颜色空间转换
 
 ```python
-# BGR -> RGB
+# BGR 转 RGB
 rgb = cv2.cvtColor(canvas, cv2.COLOR_BGR2RGB)
 ```
 
 #### 3. 归一化
 
 ```python
-# [0, 255] -> [0.0, 1.0]
+# 从 [0, 255] 归一化到 [0.0, 1.0]
 normalized = rgb.astype(np.float32) / 255.0
 ```
 
 #### 4. 转置与扩维
 
 ```python
-# HWC -> CHW
+# HWC 转 CHW
 transposed = np.transpose(normalized, (2, 0, 1))
 
-# CHW -> NCHW
+# CHW 转 NCHW
 batched = np.expand_dims(transposed, axis=0)
 ```
 
 ### 输入张量
 
-- **名称**: `images` (可能因导出参数而异)
+- **名称**: `images`（可能因导出参数而异）
 - **形状**: `[1, 3, 640, 640]`
 - **数据类型**: `float32`
 - **数值范围**: `[0.0, 1.0]`
@@ -100,7 +100,7 @@ batched = np.expand_dims(transposed, axis=0)
 
 ### 输出张量
 
-- **名称**: `output0` (可能因导出参数而异)
+- **名称**: `output0`（可能因导出参数而异）
 - **形状**: `[1, 84, 8400]` 或 `[1, 8400, 84]` (取决于导出参数)
 - **数据类型**: `float32`
 
@@ -108,11 +108,11 @@ batched = np.expand_dims(transposed, axis=0)
 
 #### 维度解释
 
-- **Batch**: 1 (单张图像)
-- **Anchors**: 8400 (检测框数量，来自 80x80 + 40x40 + 20x20 特征图)
-- **Attributes**: 84 (4 bbox + 80 classes)
+- **批次**: 1（单张图像）
+- **候选框数量**: 8400（来自 80x80 + 40x40 + 20x20 特征图）
+- **属性数量**: 84（4 个 bbox 参数 + 80 个类别分数）
 
-#### Bbox 格式
+#### 检测框格式
 
 前 4 个值为边界框坐标（相对于 640x640 输入）：
 
@@ -125,7 +125,7 @@ batched = np.expand_dims(transposed, axis=0)
 - `w`: 宽度
 - `h`: 高度
 
-#### Class Scores
+#### 类别分数
 
 后 80 个值为 COCO 80 类的置信度分数：
 
@@ -144,14 +144,14 @@ batched = np.expand_dims(transposed, axis=0)
 if predictions.shape[1] < predictions.shape[2]:
     predictions = predictions.transpose(0, 2, 1)
 
-# 去除 batch 维度
+# 去除批次维度
 predictions = predictions.squeeze(0)  # [8400, 84]
 ```
 
-#### 2. 提取 bbox 和 scores
+#### 2. 提取检测框和分数
 
 ```python
-boxes = predictions[:, :4]  # [8400, 4] - cx, cy, w, h
+boxes = predictions[:, :4]  # [8400, 4]，格式为 cx, cy, w, h
 class_scores = predictions[:, 4:]  # [8400, 80]
 ```
 
@@ -181,7 +181,7 @@ boxes_xyxy = np.stack([x1, y1, x2, y2], axis=1)
 #### 5. 坐标还原
 
 ```python
-# 去除 padding
+# 去除填充
 boxes_xyxy[:, [0, 2]] -= pad_x
 boxes_xyxy[:, [1, 3]] -= pad_y
 
@@ -193,20 +193,20 @@ boxes_xyxy[:, [0, 2]] = np.clip(boxes_xyxy[:, [0, 2]], 0, original_width)
 boxes_xyxy[:, [1, 3]] = np.clip(boxes_xyxy[:, [1, 3]], 0, original_height)
 ```
 
-#### 6. NMS (Non-Maximum Suppression)
+#### 6. NMS 非极大值抑制
 
 ```python
 def nms(boxes, scores, iou_thres=0.45):
     """
-    Non-Maximum Suppression
+    非极大值抑制。
     
-    Args:
-        boxes: [N, 4] - x1, y1, x2, y2
-        scores: [N] - confidence scores
-        iou_thres: IoU threshold (default 0.45)
+    参数：
+        boxes: [N, 4]，格式为 x1, y1, x2, y2
+        scores: [N]，置信度分数
+        iou_thres: IoU 阈值，默认 0.45
     
-    Returns:
-        keep: indices of boxes to keep
+    返回：
+        keep: 保留下来的检测框索引
     """
     order = scores.argsort()[::-1]
     keep = []
@@ -218,10 +218,10 @@ def nms(boxes, scores, iou_thres=0.45):
         if order.size == 1:
             break
         
-        # Calculate IoU
+        # 计算 IoU
         ious = box_iou(boxes[i], boxes[order[1:]])
         
-        # Keep boxes with IoU < threshold
+        # 保留 IoU 小于阈值的检测框
         order = order[1:][ious < iou_thres]
     
     return np.array(keep)
@@ -229,19 +229,19 @@ def nms(boxes, scores, iou_thres=0.45):
 
 ## 检测结果格式
 
-### Detection 对象
+### 检测结果对象
 
 ```python
 @dataclass
 class Detection:
-    class_id: int           # 类别 ID (0 for person)
-    class_name: str         # 类别名称 ("person")
+    class_id: int           # 类别编号，0 表示 person
+    class_name: str         # 类别名称，例如 "person"
     confidence: float       # 置信度 [0.0, 1.0]
     bbox: List[float]       # [x1, y1, x2, y2] 原图坐标
-    center: Tuple[int, int] # 中心点 (cx, cy)
-    foot_point: Tuple[int, int]  # 底部中心点 (cx, y2)
+    center: Tuple[int, int] # 中心点，格式为 cx, cy
+    foot_point: Tuple[int, int]  # 底部中心点，格式为 cx, y2
     roi_hits: List[Dict]    # ROI 命中信息
-    track_id: Optional[int] # 跟踪 ID (可选)
+    track_id: Optional[int] # 跟踪编号，可选
 ```
 
 ### JSON 输出格式
@@ -317,7 +317,7 @@ thresholds:
 ### 2. 内存管理
 
 - 预分配内存，避免动态分配
-- 使用 CUDA 统一内存或 pinned memory
+- 使用 CUDA 统一内存或页锁定内存
 
 ### 3. 坐标精度
 
@@ -326,8 +326,8 @@ thresholds:
 
 ### 4. NMS 实现
 
-- 推荐使用 TensorRT 内置 NMS plugin
-- 或使用 CUDA kernel 实现
+- 推荐使用 TensorRT 内置 NMS 插件
+- 或使用 CUDA 核函数实现
 
 ## 验证方法
 
@@ -360,20 +360,20 @@ python python_prototype/main.py --mode image --input test.jpg
 ./camera_tensorrt test.jpg
 
 # 对比检测框数量和坐标
-# 允许小的坐标差异（< 2 pixels）
+# 允许小的坐标差异（小于 2 像素）
 ```
 
 ## 常见问题
 
 ### Q1: 输出形状不一致
 
-**原因**: ONNX 导出时的 transpose 参数不同
+**原因**: ONNX 导出时的转置参数不同
 
 **解决**: 在后处理中检查并转置
 
 ### Q2: 坐标还原不准确
 
-**原因**: letterbox padding 计算不一致
+**原因**: letterbox 填充量计算不一致
 
 **解决**: 使用相同的 `round(x - 0.1)` 规则
 

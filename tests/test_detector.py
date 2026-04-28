@@ -7,14 +7,12 @@ from pathlib import Path
 # 添加 python_prototype 到路径
 sys.path.insert(0, str(Path(__file__).parent.parent / "python_prototype"))
 
-import numpy as np
-from data_models import ThresholdConfig
-from detector import _build_detection
+from data_models import ThresholdConfig, build_detection
 
 
 def test_build_detection():
     """测试检测结果构建"""
-    detection = _build_detection(
+    detection = build_detection(
         class_id=0,
         class_name="person",
         confidence=0.85,
@@ -55,19 +53,19 @@ def test_threshold_config():
 def test_detection_center_calculation():
     """测试检测框中心点计算"""
     # 正方形框
-    detection = _build_detection(0, "person", 0.9, [100.0, 100.0, 200.0, 200.0])
+    detection = build_detection(0, "person", 0.9, [100.0, 100.0, 200.0, 200.0])
     assert detection.center == (150, 150)
     assert detection.foot_point == (150, 200)
     print("✓ 正方形框中心点计算测试通过")
 
     # 长方形框
-    detection = _build_detection(0, "person", 0.9, [100.0, 100.0, 300.0, 400.0])
+    detection = build_detection(0, "person", 0.9, [100.0, 100.0, 300.0, 400.0])
     assert detection.center == (200, 250)
     assert detection.foot_point == (200, 400)
     print("✓ 长方形框中心点计算测试通过")
 
     # 小数坐标
-    detection = _build_detection(0, "person", 0.9, [100.5, 100.5, 200.5, 200.5])
+    detection = build_detection(0, "person", 0.9, [100.5, 100.5, 200.5, 200.5])
     assert detection.center == (150, 150)
     assert detection.foot_point == (150, 200)
     print("✓ 小数坐标中心点计算测试通过")

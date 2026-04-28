@@ -1,8 +1,8 @@
 # 报警逻辑配置文件
 version: "1.0"
 
-# 防抖参数（基于帧数）
-debounce:
+# 报警防抖参数（基于帧数），与 config.json 的 alarm 字段保持一致
+alarm:
   enter_frames: 3  # 连续 N 帧检测到目标才触发报警
   exit_frames: 5   # 连续 M 帧未检测到目标才解除报警
 

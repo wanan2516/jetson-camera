@@ -14,12 +14,39 @@ enum class SystemState {
     Alarm,
 };
 
+inline const char* SystemStateToString(SystemState state) {
+    switch (state) {
+        case SystemState::PrestartChecking:
+            return "prestart_checking";
+        case SystemState::PrestartBlocked:
+            return "prestart_blocked";
+        case SystemState::Warning:
+            return "warning";
+        case SystemState::Alarm:
+            return "alarm";
+        case SystemState::Safe:
+        default:
+            return "safe";
+    }
+}
+
 struct Detection {
     cv::Rect2f bbox;
     int class_id = 0;
     float confidence = 0.0f;
     cv::Point2f center;
     cv::Point2f foot_point;
+};
+
+struct ROIRule {
+    std::string roi_id;
+    std::string name;
+    std::string roi_type;
+    std::vector<cv::Point2f> polygon;
+    std::string judge_method = "foot_point";
+    float overlap_thres = 0.2f;
+    std::string coordinate_mode = "absolute";
+    bool enabled = true;
 };
 
 struct ROIHit {

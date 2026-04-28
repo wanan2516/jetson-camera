@@ -216,7 +216,7 @@
 当前项目里，相关文件如下：
 
 - ROI 运行配置：
-  - [config.json](/Users/wanan/PycharmProjects/camera/python_prototype/config.json)
+  - [config.json](/Users/wanan/PycharmProjects/camera/configs/config.json)
 
 - ROI 配置解析：
   - [main.py](/Users/wanan/PycharmProjects/camera/python_prototype/main.py)
@@ -232,7 +232,7 @@
 如果项目还在原型阶段，建议先按下面的方式推进：
 
 - ROI 协议按本文档固定下来
-- 当前先用本地 `config.json` 读取 ROI
+- 当前先用本地 `configs/config.json` 读取 ROI
 - 后续 Web 端直接按同样结构提交 ROI
 - 检测服务不需要改算法逻辑，只切换 ROI 来源即可
 

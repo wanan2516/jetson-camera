@@ -301,7 +301,7 @@ def compare_backends(config: dict, image_path: str) -> None:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="YOLOv11n industrial safety vision prototype")
-    default_config = Path(__file__).with_name("config.json")
+    default_config = Path(__file__).resolve().parent.parent / "configs" / "config.json"
     parser.add_argument("--config", type=str, default=str(default_config), help="Path to config.json")
     parser.add_argument("--mode", type=str, choices=["image", "video", "camera", "export_onnx", "validate_onnx", "decode_onnx", "compare_backends"], default="image")
     parser.add_argument("--input", type=str, help="Image path, video path, camera index, or validation image")

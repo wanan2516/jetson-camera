@@ -28,40 +28,32 @@ TrtDetector::TrtDetector(const std::string& engine_file_path) {
     assert(context_ != nullptr);
     cudaStreamCreate(&stream_);
 
-    num_bindings_ = engine_->getNbBindings();
+    num_bindings_ = engine_->getNbIOTensors();
     for (int i = 0; i < num_bindings_; ++i) {
-        Binding binding;
-        const nvinfer1::DataType dtype = engine_->getBindingDataType(i);
-        binding.name = engine_->getBindingName(i);
-        binding.dsize = type_to_size(dtype);
+        const char* tensor_name = engine_->getIOTensorName(i);
+        assert(tensor_name != nullptr);
 
-        if (engine_->bindingIsInput(i)) {
+        Binding binding;
+        const nvinfer1::DataType dtype = engine_->getTensorDataType(tensor_name);
+        binding.name = tensor_name;
+        binding.dsize = type_to_size(dtype);
+        binding.dims = engine_->getTensorShape(tensor_name);
+        binding.size = get_size_by_dims(binding.dims);
+
+        if (engine_->getTensorIOMode(tensor_name) == nvinfer1::TensorIOMode::kINPUT) {
             ++num_inputs_;
-            const auto dims = engine_->getProfileDimensions(i, 0, nvinfer1::OptProfileSelector::kMAX);
-            binding.size = get_size_by_dims(dims);
-            binding.dims = dims;
             input_bindings_.push_back(binding);
-            context_->setBindingDimensions(i, dims);
         } else {
             ++num_outputs_;
-            const auto dims = context_->getBindingDimensions(i);
-            binding.size = get_size_by_dims(dims);
-            binding.dims = dims;
             output_bindings_.push_back(binding);
         }
     }
 }
 
 TrtDetector::~TrtDetector() {
-    if (context_ != nullptr) {
-        context_->destroy();
-    }
-    if (engine_ != nullptr) {
-        engine_->destroy();
-    }
-    if (runtime_ != nullptr) {
-        runtime_->destroy();
-    }
+    delete context_;
+    delete engine_;
+    delete runtime_;
     if (stream_ != nullptr) {
         cudaStreamDestroy(stream_);
     }
@@ -88,6 +80,14 @@ void TrtDetector::MakePipe(bool warmup) {
         CHECK(cudaHostAlloc(&host_ptr, size, 0));
         device_ptrs_.push_back(device_ptr);
         host_ptrs_.push_back(host_ptr);
+    }
+
+    int device_index = 0;
+    for (const auto& binding : input_bindings_) {
+        context_->setTensorAddress(binding.name.c_str(), device_ptrs_[device_index++]);
+    }
+    for (const auto& binding : output_bindings_) {
+        context_->setTensorAddress(binding.name.c_str(), device_ptrs_[device_index++]);
     }
 
     if (!warmup) {
@@ -146,12 +146,13 @@ void TrtDetector::Letterbox(const cv::Mat& image, cv::Mat& out, const cv::Size& 
 void TrtDetector::CopyFromMat(const cv::Mat& image, const cv::Size& input_size) {
     cv::Mat nchw;
     Letterbox(image, nchw, input_size);
-    context_->setBindingDimensions(0, nvinfer1::Dims{4, {1, 3, input_size.height, input_size.width}});
+    assert(!input_bindings_.empty());
+    context_->setInputShape(input_bindings_[0].name.c_str(), nvinfer1::Dims4{1, 3, input_size.height, input_size.width});
     CHECK(cudaMemcpyAsync(device_ptrs_[0], nchw.ptr<float>(), nchw.total() * nchw.elemSize(), cudaMemcpyHostToDevice, stream_));
 }
 
 void TrtDetector::Infer() {
-    context_->enqueueV2(device_ptrs_.data(), stream_, nullptr);
+    context_->enqueueV3(stream_);
     for (int i = 0; i < num_outputs_; ++i) {
         const size_t output_size = output_bindings_[i].size * output_bindings_[i].dsize;
         CHECK(cudaMemcpyAsync(host_ptrs_[i], device_ptrs_[i + num_inputs_], output_size, cudaMemcpyDeviceToHost, stream_));

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field, asdict
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 
 class ROIType(str, Enum):
@@ -102,3 +102,17 @@ class FrameResult:
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
+
+
+def build_detection(class_id: int, class_name: str, confidence: float, bbox: Sequence[float]) -> Detection:
+    x1, y1, x2, y2 = bbox
+    center = (int((x1 + x2) / 2), int((y1 + y2) / 2))
+    foot_point = (int((x1 + x2) / 2), int(y2))
+    return Detection(
+        class_id=class_id,
+        class_name=class_name,
+        confidence=confidence,
+        bbox=[float(x1), float(y1), float(x2), float(y2)],
+        center=center,
+        foot_point=foot_point,
+    )

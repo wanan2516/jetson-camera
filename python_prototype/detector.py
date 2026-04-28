@@ -7,7 +7,7 @@ import numpy as np
 import onnxruntime as ort
 from ultralytics import YOLO
 
-from data_models import Detection, ThresholdConfig
+from data_models import Detection, ThresholdConfig, build_detection
 from logger import setup_logger
 
 logger = setup_logger("detector")
@@ -64,7 +64,7 @@ class PersonDetector:
 
             confidence = float(box.conf[0].item())
             x1, y1, x2, y2 = box.xyxy[0].tolist()
-            detections.append(_build_detection(class_id, class_name, confidence, [x1, y1, x2, y2]))
+            detections.append(build_detection(class_id, class_name, confidence, [x1, y1, x2, y2]))
 
         return detections
 
@@ -217,7 +217,7 @@ class ONNXRuntimePersonDetector:
         for index in keep:
             class_id = int(class_ids[index])
             class_name = "person" if class_id == 0 else f"class_{class_id}"
-            detections.append(_build_detection(class_id, class_name, float(scores[index]), boxes[index].tolist()))
+            detections.append(build_detection(class_id, class_name, float(scores[index]), boxes[index].tolist()))
         return detections
 
     def infer(self, frame: np.ndarray) -> List[Detection]:
@@ -226,20 +226,6 @@ class ONNXRuntimePersonDetector:
         if not outputs:
             return []
         return self._decode_raw_predictions(outputs[0], frame.shape, scale, pad_x, pad_y)
-
-
-def _build_detection(class_id: int, class_name: str, confidence: float, bbox: Sequence[float]) -> Detection:
-    x1, y1, x2, y2 = bbox
-    center = (int((x1 + x2) / 2), int((y1 + y2) / 2))
-    foot_point = (int((x1 + x2) / 2), int(y2))
-    return Detection(
-        class_id=class_id,
-        class_name=class_name,
-        confidence=confidence,
-        bbox=[float(x1), float(y1), float(x2), float(y2)],
-        center=center,
-        foot_point=foot_point,
-    )
 
 
 def build_detector(
