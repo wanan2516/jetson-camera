@@ -320,27 +320,6 @@ alarm:
 - [部署流程](docs/deployment_flow.md)
 - [模型输入输出规范](docs/model_io.md)
 
-## 开发计划
-
-### 当前阶段（PC 验证）
-
-- [x] YOLOv11n 人员检测
-- [x] ROI 区域判断
-- [x] 报警逻辑
-- [x] ONNX 导出与验证
-- [x] ONNX Runtime 推理
-- [x] 配置文件管理
-- [x] 日志输出
-- [x] 测试用例
-
-### 下一阶段（Jetson 部署）
-
-- [ ] TensorRT Engine 生成
-- [ ] C++ 推理程序完善
-- [ ] ROI 和报警逻辑迁移到 C++
-- [ ] 性能优化（FP16/INT8）
-- [ ] 端到端测试
-- [ ] 现场部署
 
 ## 常见问题
 
