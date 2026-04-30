@@ -1,6 +1,10 @@
 {
   "version": "1.0",
   "camera_id": "cam_demo_001",
+  "detect_enable": true,
+  "model_name": "240922",
+  "backend": "tensorrt",
+  "engine_path": "weights/yolo11n_person.engine",
   "model_path": "../weights/yolo11n.pt",
   "imgsz": 640,
   "device": null,
@@ -9,6 +13,11 @@
     "conf_thres": 0.35,
     "iou_thres": 0.45
   },
+  "overlap_threshold": 0.1,
+  "match_enable": true,
+  "match_threshold": 0.5,
+  "match_frequency": 5,
+  "target": "all",
   "alarm": {
     "enter_frames": 3,
     "exit_frames": 5
