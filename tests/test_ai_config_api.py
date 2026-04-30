@@ -88,6 +88,30 @@ def test_detection_regions_rect_to_points_and_clear():
         assert store.get_roi_config()["rois"] == []
 
 
+def test_detection_regions_accepts_rois_key():
+    with TemporaryDirectory() as temp_dir:
+        use_temp_configs(temp_dir)
+        client = app.test_client()
+        payload = {
+            "target": "low",
+            "clear": False,
+            "rois": [
+                {
+                    "id": 3,
+                    "rect": {"x1": 10, "y1": 20, "x2": 110, "y2": 120},
+                }
+            ],
+        }
+
+        response = client.post("/api/detection/regions", json=payload)
+        assert response.status_code == 200
+
+        roi = store.get_roi_config()["rois"][0]
+        assert roi["target"] == "low"
+        assert roi["type"] == "forbidden"
+        assert roi["roi_type"] == "forbidden_zone"
+
+
 def test_invalid_region_rejected():
     with TemporaryDirectory() as temp_dir:
         use_temp_configs(temp_dir)
@@ -145,6 +169,7 @@ def test_project_roi_format_is_accepted():
 if __name__ == "__main__":
     test_detection_settings_aliases()
     test_detection_regions_rect_to_points_and_clear()
+    test_detection_regions_accepts_rois_key()
     test_invalid_region_rejected()
     test_project_roi_format_is_accepted()
     print("✓ AI config API tests passed")

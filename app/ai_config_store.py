@@ -155,9 +155,9 @@ def save_detection_regions(payload: Dict[str, Any]) -> Tuple[Dict[str, Any], boo
         _write_json(CONFIG_PATH, config)
         return config, True
 
-    regions = payload.get("regions")
+    regions = payload.get("rois", payload.get("regions"))
     if not isinstance(regions, list):
-        raise ConfigValidationError("regions 必须是 list")
+        raise ConfigValidationError("rois 必须是 list")
     if len(regions) > 3:
         raise ConfigValidationError("最多只能保存 3 个区域")
 
