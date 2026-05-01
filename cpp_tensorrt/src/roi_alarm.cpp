@@ -253,16 +253,20 @@ std::vector<DetectionWithROI> ROIManager::Apply(const std::vector<Detection>& de
 }
 
 void ROIManager::DrawROIs(cv::Mat& image) const {
+    cv::Mat overlay = image.clone();
     for (const auto& roi : roi_rules_) {
         const std::vector<cv::Point> polygon = ResolvePolygon(roi, image.size());
+        if (polygon.empty()) {
+            continue;
+        }
         const cv::Scalar color = roi.roi_type == "forbidden_zone" ? cv::Scalar(0, 0, 255)
                               : roi.roi_type == "warning_zone" ? cv::Scalar(0, 255, 255)
-                                                               : cv::Scalar(0, 255, 0);
+                                                               : cv::Scalar(255, 255, 0);
+        const std::vector<std::vector<cv::Point>> polygons{polygon};
+        cv::fillPoly(overlay, polygons, color);
         cv::polylines(image, polygon, true, color, 2);
-        if (!polygon.empty()) {
-            cv::putText(image, roi.name, polygon.front(), cv::FONT_HERSHEY_SIMPLEX, 0.5, color, 1);
-        }
     }
+    cv::addWeighted(overlay, 0.14, image, 0.86, 0.0, image);
 }
 
 AlarmLogic::AlarmLogic(const std::vector<ROIRule>& roi_rules, int enter_frames, int exit_frames)

@@ -229,16 +229,6 @@ void TrtDetector::PostProcess(std::vector<Detection>& detections, const Inferenc
 
 void TrtDetector::DrawDetections(cv::Mat& image, const std::vector<Detection>& detections) const {
     for (const auto& detection : detections) {
-        cv::rectangle(image, detection.bbox, cv::Scalar(255, 0, 0), 2);
-        const std::string label = cv::format("person %.2f", detection.confidence);
-        cv::putText(
-            image,
-            label,
-            cv::Point(static_cast<int>(detection.bbox.x), std::max(10, static_cast<int>(detection.bbox.y) - 8)),
-            cv::FONT_HERSHEY_SIMPLEX,
-            0.5,
-            cv::Scalar(0, 255, 0),
-            1
-        );
+        cv::rectangle(image, detection.bbox, cv::Scalar(52, 235, 88), 1);
     }
 }

@@ -245,11 +245,11 @@ int main(int argc, char** argv) {
             cv::putText(
                 frame,
                 cv::format("FPS %.2f", 1000.0f / millis),
-                cv::Point(10, 20),
+                cv::Point(10, 18),
                 cv::FONT_HERSHEY_SIMPLEX,
-                0.6,
+                0.45,
                 cv::Scalar(0, 0, 255),
-                2
+                1
             );
         }
         cv::putText(
@@ -260,11 +260,11 @@ int main(int argc, char** argv) {
                 BoolString(frame_result.allow_start),
                 BoolString(frame_result.alarm)
             ),
-            cv::Point(10, 45),
+            cv::Point(10, 36),
             cv::FONT_HERSHEY_SIMPLEX,
-            0.6,
+            0.45,
             frame_result.alarm ? cv::Scalar(0, 0, 255) : cv::Scalar(0, 255, 0),
-            2
+            1
         );
 
         if (!output_path.empty()) {
