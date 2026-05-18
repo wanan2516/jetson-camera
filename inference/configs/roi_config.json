@@ -1,0 +1,15 @@
+{
+  "version": "1.0",
+  "rois": [
+    {
+      "roi_id": "hazard_1",
+      "name": "全图危险区域",
+      "enabled": true,
+      "roi_type": "forbidden_zone",
+      "judge_method": "foot_point",
+      "coordinate_mode": "normalized",
+      "polygon": [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]],
+      "overlap_thres": 0.2
+    }
+  ]
+}
